@@ -1,136 +1,232 @@
-var assert=require('assert');
-var sessionCheck=require('../lib/session-check');
+const assert=require('assert');
+const SessionChecker=require('../lib/session-check');
 
 
 
-describe('测试 session-check 模块',()=>{
+describe('测试 SessionChecker类',()=>{
 
     // 模拟 req、res、next
-    var req={ session:{ username:'', roles:[] } };
-    var res={ send:()=>{ } };
-    var next=()=>{};
+    // 第一组：
+    let req={ session:{ username:'', roles:[]} };
+    let res={ send:()=>{ } };
+    let next=()=>{};
 
-    describe('测试 requireLogin()',()=>{
-        var requireLogin= sessionCheck.requireLogin();
-        it('username={undefined} 时:资源不可访问(跳过next()方法)',()=>{
-            req.session.username=undefined;
-            let exeuted=false;
-            requireLogin(req,res,()=>{
-                console.log('这里的代码不会被执行');
-                exeuted=true;
-                assert.fail("fail");
+    describe('.requireLogin()',()=>{
+
+        const test=(checker)=>{
+                let executed=false;
+                checker.requireLogin()(req,res,()=>{
+                    executed=true;
+                });
+                return executed;
+        };
+        
+        describe("当username=假 时:\t资源不可访问(跳过next()方法)",function(){
+
+            it('测试以默认参数进行初始化的情况',()=>{
+                const checker=new SessionChecker();
+                ["",undefined,null].forEach(e=>{
+                    req.session.username=e;
+                    const executed=test(checker);
+                    assert.ok(!executed,'username=假，next()方法不应该被执行');
+                });
             });
-            assert.ok(!exeuted,'username为defined，next()方法不应该被执行');
+            
+            it('测试自定义配置的请况',()=>{
+                ["",undefined,null].forEach(e=>{
+                    req.session.user=e;
+                    const checker=new SessionChecker(
+                        (req)=>{return !! req.session.user;}
+                    );
+                    const executed=test(checker);
+                    assert.ok(!executed,'username=假，next()方法不应该被执行');
+                });
+            });
         });
-        it('username={null} 时:资源不可访问(跳过next()方法)',()=>{
-            req.session.username=null;
-            let exeuted=false;
-            requireLogin(req,res,()=>{
-                console.log('这里的代码不会被执行');
-                exeuted=true;
-                assert.fail("fail");
+
+        describe('username=普通字符串 时:\t资源可以访问(执行next()方法)',()=>{
+
+            it("测试以默认参数进行初始化的情况",function(){
+                const checker=new SessionChecker();
+                req.session.username="hello";
+                const executed=test(checker);
+                //期待executed为true
+                assert.ok(executed,'普通字符串的用户名，理应执行next()');
             });
-            assert.ok(!exeuted,'username为null,next()方法不应该被执行');
-        });
-        it('username={空串} 时:资源不可访问(跳过next()方法)',()=>{
-            req.session.username="";
-            let exeuted=false;
-            requireLogin(req,res,()=>{
-                console.log('这里的代码不会被执行');
-                exeuted=true;
-                assert.fail("fail");
+
+            it('测试自定义配置的请况', () => {
+                [" ", 0x00af, "\x00ab","admin",].forEach(e => {
+                    req.session.user = e;
+                    const checker = new SessionChecker(
+                        (req) => { return !!req.session.user; }
+                    );
+                    const executed=test(checker);
+                    assert.ok(executed,'普通字符串的用户名，理应执行next()');
+                });
             });
-            assert.ok(!exeuted,"username为空字符串，next()方法不应该被执行");
-        });
-        it('username={普通字符串} 时:资源可以访问(执行next()方法)',()=>{
-            req.session.username="hello";
-            let exeuted=false;
-            requireLogin(req,res,()=>{
-                exeuted=true;
-            });
-            //期待executed为true
-            assert.ok(exeuted,'普通字符串的用户名，理应执行next()');
+            
         });
         
     });
     
-    describe('测试 requireRole()',()=>{
-        it('要求`ROLE_1`，已有`ROLE_X`',()=>{
-            req.session.roles=['ROLE_X'];
-            var requireRole=sessionCheck.requireRole('ROLE_1');
-            var exeuted=false; 
-            requireRole(req,res,()=>{
-                assert.fail('没有要求的角色，就不该执行');
-                exeuted=true;
+
+    describe('.requireRole()',()=>{
+        const test = function (checker, ROLE) {
+            var executed = false;
+            checker.requireRole(ROLE)(req, res, () => {
+                executed = true;
             });
-            //期待executed为false
-            assert.ok(!exeuted,"没有要求的角色，但next()被执行了");
-        });
-        it('要求`ROLE_1`，已有 `ROLE_1`',()=>{
-            req.session.roles=['ROLE_12','ROLE_2','ROLE_1'];
-            var requireRole=sessionCheck.requireRole('ROLE_1');
-            let exeuted=false; 
-            requireRole(req,res,()=>{
-                exeuted=true;
-                assert.ok(exeuted);
+            return executed;
+        };
+
+        describe("要求`ROLE_1`，已有`ROLE_X`",()=>{
+
+            it("测试使用默认参数进行初始化的情况",function(){
+                let checker=new SessionChecker();
+                req.session.roles=['ROLE_X'];
+                const executed=test(checker,"ROLE_1");
+                assert.ok(!executed, "没有要求的角色，但next()被执行了");
             });
-            //期待executed为true
-            assert.ok(exeuted,"拥有指定角色，next()理应被执行");
+            it("测试使用自定义参数进行初始化的情况",function(){
+                let checker=new SessionChecker(
+                    (req)=>{return !! req.session.username;},
+                    (req)=>{return req.session.rolelist;}
+                );
+                req.session.rolelist=['ROLE_X'];
+                const executed=test(checker,"ROLE_1");
+                assert.ok(!executed, "没有要求的角色，但next()被执行了");
+            });
+            
         });
+
+
+        describe("要求`ROLE_A`，已有`ROLE_A`",()=>{
+
+            it("测试使用默认参数进行初始化的情况",function(){
+                let checker=new SessionChecker();
+                req.session.roles=['ROLE_A'];
+                const executed=test(checker,"ROLE_A");
+                assert.ok(executed,"拥有所要求的角色`ROLE_A`，但next()未执行");
+            });
+
+            it("测试使用自定义参数进行初始化的情况",function(){
+                let checker=new SessionChecker(
+                    (req)=>{return !! req.session.username;},
+                    (req)=>{return req.session.rolelist;}
+                );
+                req.session.rolelist=['ROLE_A'];
+                const executed=test(checker,"ROLE_A");
+                assert.ok(executed,"拥有所要求的角色`ROLE_A`，但next()未执行");
+            });
+            
+        });
+
     });
     
 
-    describe('测试 requireAnyRole()',()=>{
-        it('要求 [ROLE_X,ROLE_Y] 之中的任一角色，已有 `ROLE_1,ROLE_2,ROLE_3`',()=>{
-            req.session.roles=['ROLE_1','ROLE_2','ROLE_3'];
-            var requireAnyRole=sessionCheck.requireAnyRole(['ROLE_X','ROLE_Y']);
-            var exeuted=false; 
-            requireAnyRole(req,res,()=>{
-                assert.fail('没有要求的角色，就不该执行');
-                exeuted=true;
-            });
-            //期待executed为false
-            assert.ok(!exeuted,"没有要求的角色，但next()被执行了");
-        });
-        it('要求 [ROLE_X,ROLE_Y] 之中的任一角色，已有 `ROLE_1,ROLE_2,ROLE_X`',()=>{
-            req.session.roles=['ROLE_1','ROLE_2','ROLE_X'];
-            var requireAnyRole=sessionCheck.requireAnyRole(['ROLE_X','ROLE_Y']);
-            var exeuted=false; 
-            requireAnyRole(req,res,()=>{
-                exeuted=true;
-                assert.ok(exeuted);
-            });
-            //期待executed为true
-            assert.ok(exeuted,"拥有指定角色，next()理应被执行");
-        });
+    describe('.requireAnyRole()',()=>{
 
+        const test=(checker,ROLE_ARRAY)=>{
+            let executed=false; 
+            checker.requireAnyRole(ROLE_ARRAY)(req,res,()=>{
+                executed=true;
+            });
+            return executed;
+        };
+
+        describe('要求 [ROLE_X,ROLE_Y] 之中的任一角色，已有 `ROLE_1,ROLE_2,ROLE_X`',()=>{
+
+            it('测试使用默认参数进行初始化的情况', () => {
+                req.session.roles = ['ROLE_1', 'ROLE_2', 'ROLE_X'];
+                const checker=new SessionChecker();
+                const executed = test(checker,['ROLE_X','ROLE_Y']);
+                assert.ok(executed, "拥有指定角色，next()理应被执行");
+            });
+
+            it('测试使用自定义参数进行初始化的情况', () => {
+                req.session.rolelist = ['ROLE_1', 'ROLE_2', 'ROLE_X'];
+                const checker=new SessionChecker(
+                    (req)=>{return !!req.session.username;},
+                    (req)=>{return req.session.rolelist;}
+                );
+                const executed = test(checker,['ROLE_X','ROLE_Y']);
+                assert.ok(executed, "拥有指定角色，next()理应被执行");
+            });
+        });
+  
+        describe('要求 [ROLE_X,ROLE_Y] 之中的任一角色，已有 `ROLE_1,ROLE_2,ROLE_3`', () => {
+
+            it('测试使用默认参数进行初始化的情况', () => {
+                req.session.roles = ['ROLE_1', 'ROLE_2', 'ROLE_3'];
+                const checker = new SessionChecker();
+                const executed = test(checker, ['ROLE_X', 'ROLE_Y']);
+                assert.ok(!executed, "无指定的任一角色，绝不应该执行next()");
+            });
+
+            it('测试使用自定义参数进行初始化的情况', () => {
+                req.session.rolelist = ['ROLE_1', 'ROLE_2', 'ROLE_3'];
+                const checker = new SessionChecker(
+                    (req) => { return !!req.session.username; },
+                    (req) => { return req.session.rolelist; }
+                );
+                const executed = test(checker, ['ROLE_X', 'ROLE_Y']);
+                assert.ok(!executed, "无指定的任一角色，绝不应该执行next()");
+            });
+        });
+ 
     });
 
+    describe('.requireAllRole()',()=>{
 
+        const test=(checker,ROLE_ARRAY)=>{
+            let executed=false; 
+            checker.requireAllRoles(ROLE_ARRAY)(req,res,()=>{
+                executed=true;
+            });
+            return executed;
+        };
 
-    describe('测试 checkAllRoles()',()=>{
-        it('要求 [ROLE_X,ROLE_Y] 的全部角色，已有 `ROLE_1,ROLE_2,ROLE_3,ROLE_X`',()=>{
-            req.session.roles=['ROLE_1','ROLE_2','ROLE_3','ROLE_X'];
-            var requireAllRoles=sessionCheck.requireAllRoles(['ROLE_X','ROLE_Y']);
-            var exeuted=false; 
-            requireAllRoles(req,res,()=>{
-                assert.fail('没有要求的全部角色，就不该执行');
-                exeuted=true;
+        describe('要求 [ROLE_X,ROLE_Y] 的全部角色，已有 `ROLE_1,ROLE_2,ROLE_3,ROLE_X`',()=>{
+
+            it('测试使用默认参数进行初始化的情况', () => {
+                req.session.roles = ['ROLE_1', 'ROLE_2','ROLE_3', 'ROLE_X'];
+                const checker=new SessionChecker();
+                const executed = test(checker,['ROLE_X','ROLE_Y']);
+                assert.ok(!executed, "未拥有指定的全部角色，next()不应被执行");
             });
-            //期待executed为false
-            assert.ok(!exeuted,"没有要求的角色，但next()被执行了");
-        });
-        it('要求 [ROLE_X,ROLE_Y] 的全部角色，已有`ROLE_1,ROLE_Y,ROLE_X`',()=>{
-            req.session.roles=['ROLE_1','ROLE_Y','ROLE_X'];
-            var requireAllRoles=sessionCheck.requireAllRoles(['ROLE_X','ROLE_Y']);
-            var exeuted=false; 
-            requireAllRoles(req,res,()=>{
-                exeuted=true;
-                assert.ok(exeuted);
+
+            it('测试使用自定义参数进行初始化的情况', () => {
+                req.session.rolelist = ['ROLE_1', 'ROLE_2','ROLE_3', 'ROLE_X'];
+                const checker=new SessionChecker(
+                    (req)=>{return !!req.session.username;},
+                    (req)=>{return req.session.rolelist;}
+                );
+                const executed = test(checker,['ROLE_X','ROLE_Y']);
+                assert.ok(!executed, "未拥有指定的全部角色，next()不应被执行");
             });
-            //期待executed为true
-            assert.ok(exeuted,"拥有指定的全部角色，next()理应被执行");
         });
+  
+        describe('要求 [ROLE_X,ROLE_Y] 的全部角色，已有`ROLE_1,ROLE_Y,ROLE_X``', () => {
+
+            it('测试使用默认参数进行初始化的情况', () => {
+                req.session.roles = ['ROLE_1', 'ROLE_Y','ROLE_X',];
+                const checker = new SessionChecker();
+                const executed = test(checker, ['ROLE_X', 'ROLE_Y']);
+                assert.ok(executed, "拥有要求的全部角色，理应应该执行next()");
+            });
+
+            it('测试使用自定义参数进行初始化的情况', () => {
+                req.session.rolelist = ['ROLE_1', 'ROLE_Y','ROLE_X',];
+                const checker = new SessionChecker(
+                    (req) => { return !!req.session.username; },
+                    (req) => { return req.session.rolelist; }
+                );
+                const executed = test(checker, ['ROLE_X', 'ROLE_Y']);
+                assert.ok(executed, "拥有要求的全部角色，理应应该执行next()");
+            });
+        });
+ 
     });
+
 
 });

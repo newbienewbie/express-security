@@ -4,7 +4,7 @@
   "description": "lightweight authentication/authorization express middleware by the checking session",
   "main": "index.js",
   "scripts": {
-    "test": "mocha test --recursive"
+    "test": "mocha test --recursive --use_strict"
   },
   "keywords": [
     "express",

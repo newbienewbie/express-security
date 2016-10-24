@@ -1,4 +1,4 @@
-const sessionCheck=require('./lib/session-check');
+const AuthorizationChecker=require('./lib/authorization-checker');
 
 
-module.exports=sessionCheck;
+module.exports=AuthorizationChecker;

@@ -1,17 +1,20 @@
 {
-  "name": "session-check",
+  "name": "express-security",
   "version": "0.1.0",
-  "description": "lightweight authentication/authorization express middleware by the checking session",
+  "description": "lightweight authentication/authorization express middleware",
   "main": "index.js",
   "scripts": {
     "test": "mocha test --recursive --use_strict"
   },
   "keywords": [
     "express",
-    "session-check",
+    "security",
     "authentication",
     "authorization"
   ],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "mocha": "^3.1.2"
+  }
 }

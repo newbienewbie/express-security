@@ -1,4 +1,4 @@
 const AuthorizationChecker=require('./lib/authorization-checker');
 
 
-module.exports=AuthorizationChecker;
+module.exports={AuthorizationChecker};

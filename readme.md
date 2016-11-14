@@ -58,6 +58,7 @@ const checker=new AuthorizationChecker(
 
 // 要求登陆
 router.use('/dashboard',checker.requireLogin());
+
 // 要求登陆，自定义重定向页面
 router.use('/user/detail',checker.requireLogin("/account"));
 
@@ -69,4 +70,7 @@ router.use("/sudo",checker.requireAnyRole(["ROLE_ROOT","ROLE_ADMIN"]));
 
 // 要求拥有 "ROLE_0"、"ROLE_1"、"ROLE_2" 中全部角色
 router.use("/holy",checker.requireAllRoles(["ROLE_0","ROLE_1","ROLE_2"]));
+
+// 要求返回正确值的可调用对象
+router.use("/shit",checker.requireTrue((req)=>{return !! req.query.sth;},"/"));
 ```

@@ -229,4 +229,46 @@ describe('测试 AuthorizationChecker类',()=>{
     });
 
 
+    describe('.requireTrue()',()=>{
+
+        const test=(checker,fn)=>{
+            let executed=false;
+            checker.requireTrue(fn)(req,res,()=>{
+                executed=true;
+            });
+            return executed;
+        };
+        
+        describe("当fn返回值为真时:\t资源应可以被访问(必须执行next()方法)",function(){
+            
+            it('测试默认情况',()=>{
+                const checker=new AuthorizationChecker();
+                req.sth=true;
+                let executed=test(checker);
+                assert.ok(executed,"必须为真");
+            });
+
+            it('测试传递返回值为真的函数',()=>{
+                const checker=new AuthorizationChecker();
+                req.sth=true;
+                let executed=test(checker,(req)=>{return req.sth;});
+                assert.ok(executed,"必须为真");
+            });
+       
+        });
+
+        describe("当fn返回值为假时:\t资源应不可被访问(必须跳过next()方法)",function(){
+            
+            it('测试传递返回值为假的函数',()=>{
+                const checker=new AuthorizationChecker();
+                req.sth=false;
+                let executed=test(checker,(req)=>{return req.sth;});
+                assert.ok(!executed,"必不能执行");
+            });
+       
+        });
+
+     
+    });
+
 });

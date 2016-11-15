@@ -2,10 +2,12 @@
 
 一套`Express`中间件，轻量，用于根据当前用户是否登陆、及其拥有的角色来拦截请求。
 
-目前仅提供 `AuthorizationChecker` 类。
+目前使用 `AuthorizationChecker` 类作为对外统一接口。
 
 ## 使用说明
 
+1. 实例化一个检查器（如果需要，可以将之作为服务暴露出去）
+2. 使用检查器拦截请求
 
 ### 默认情况
 
@@ -15,14 +17,14 @@
 * 默认情况下，对客户端的用户名判断是通过`req.session.username`实现的。如果要定制，需要自行提供登陆检查器。
 * 默认情况下，对客户端的角色判断是通过`req.session.roles`实现的。如果要定制，需要自行提供角色访问器。
 
-所以往往需要安装：
+所以，这时候往往需要安装第三方模块保证`session`可用，比如使用`express-session`中间件：
 ```
 > npm install express-session
 ```
 
 ### 自定义配置
 
-但是，这`AuthorizationChecker`检查机制并不和 `session` 耦合在一起。 通过提供自定义的`登陆检查器`、`角色访问器`，完全可以不需要 `session` 。
+但是，`AuthorizationChecker`检查机制并不和 `session` 耦合在一起。 通过提供自定义`登陆检查器`、`角色访问器`，完全可以不需要 `session` 。
 
 可以通过`AuthorizationChecker`实现自定义：
 ```Java
@@ -36,7 +38,7 @@ const checker=new AuthorizationChecker(
 
 通过`npm`安装：
 ```
-> npm install session-security --save
+> npm install express-security --save
 ```
 
 测试：

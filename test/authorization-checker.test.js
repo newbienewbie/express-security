@@ -14,55 +14,72 @@ describe('测试 AuthorizationChecker类',()=>{
     describe('.requireLogin()',()=>{
 
         const test=(checker)=>{
-                let executed=false;
-                checker.requireLogin()(req,res,()=>{
-                    executed=true;
-                });
+            let executed=false;
+            const middleware=checker.requireLogin();
+            return middleware(req,res,()=>{
+                executed=true;
+            }).then(()=>{
                 return executed;
+            });
         };
-        
         describe("当username=假 时:\t资源不可访问(跳过next()方法)",function(){
 
-            it('测试以默认参数进行初始化的情况',()=>{
+            it('测试以默认参数进行初始化的情况',(done)=>{
                 const checker=new AuthorizationChecker();
-                ["",undefined,null].forEach(e=>{
+                const promises=["",undefined,null].map(e=>{
                     req.session.username=e;
-                    const executed=test(checker);
-                    assert.ok(!executed,'username=假，next()方法不应该被执行');
+                    return test(checker)
+                        .then(executed=>{
+                            assert.ok(!executed,'username=假，next()方法不应该被执行');
+                        });
                 });
+                Promise.all(promises).then(()=>{
+                    done();
+                }).catch(done);
             });
             
-            it('测试自定义配置的请况',()=>{
-                ["",undefined,null].forEach(e=>{
+            it('测试自定义配置的请况',(done)=>{
+
+                const promises=["",undefined,null].map(e=>{
                     req.session.user=e;
                     const checker=new AuthorizationChecker(
                         (req)=>{return !! req.session.user;}
                     );
-                    const executed=test(checker);
-                    assert.ok(!executed,'username=假，next()方法不应该被执行');
+                    return test(checker)
+                        .then((executed)=>{
+                            assert.ok(!executed,'username=假，next()方法不应该被执行');
+                        });
                 });
+
+                Promise.all(promises).then(()=>{done();}).catch(done);
             });
         });
-
         describe('username=普通字符串 时:\t资源可以访问(执行next()方法)',()=>{
 
-            it("测试以默认参数进行初始化的情况",function(){
+            it("测试以默认参数进行初始化的情况",function(done){
                 const checker=new AuthorizationChecker();
                 req.session.username="hello";
-                const executed=test(checker);
-                //期待executed为true
-                assert.ok(executed,'普通字符串的用户名，理应执行next()');
+                test(checker)
+                    .then(executed=>{
+                        //期待executed为true
+                        assert.ok(executed,'普通字符串的用户名，理应执行next()');
+                    })
+                    .then(done)
+                    .catch(done);
             });
 
-            it('测试自定义配置的请况', () => {
-                [" ", 0x00af, "\x00ab","admin",].forEach(e => {
+            it('测试自定义配置的请况', function(done){
+                const promises=[" ", 0x00af, "\x00ab","admin"].map(e => {
                     req.session.user = e;
                     const checker = new AuthorizationChecker(
                         (req) => { return !!req.session.user; }
                     );
-                    const executed=test(checker);
-                    assert.ok(executed,'普通字符串的用户名，理应执行next()');
+                    return test(checker)
+                        .then((executed)=>{
+                            assert.ok(executed,`用户名=${e}，理应执行next(),然而executed=${executed}`);
+                        });
                 });
+                Promise.all(promises).then(()=>{done();}).catch(done);
             });
             
         });
@@ -123,7 +140,6 @@ describe('测试 AuthorizationChecker类',()=>{
 
     });
     
-
     describe('.requireAnyRole()',()=>{
 
         const test=(checker,ROLE_ARRAY)=>{
@@ -270,5 +286,4 @@ describe('测试 AuthorizationChecker类',()=>{
 
      
     });
-
 });

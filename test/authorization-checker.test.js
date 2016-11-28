@@ -24,7 +24,7 @@ describe('测试 AuthorizationChecker类',()=>{
         };
         describe("当username=假 时:\t资源不可访问(跳过next()方法)",function(){
 
-            it('测试以默认参数进行初始化的情况',(done)=>{
+            it('以默认参数进行初始化',(done)=>{
                 const checker=new AuthorizationChecker();
                 const promises=["",undefined,null].map(e=>{
                     req.session.username=e;
@@ -38,7 +38,7 @@ describe('测试 AuthorizationChecker类',()=>{
                 }).catch(done);
             });
             
-            it('测试自定义配置的请况',(done)=>{
+            it('自定义配置(同步式)',(done)=>{
 
                 const promises=["",undefined,null].map(e=>{
                     req.session.user=e;
@@ -53,10 +53,30 @@ describe('测试 AuthorizationChecker类',()=>{
 
                 Promise.all(promises).then(()=>{done();}).catch(done);
             });
+                      
+            it('自定义配置(异步式)',(done)=>{
+
+                const promises=["",undefined,null].map(e=>{
+                    req.session.user=e;
+                    const checker=new AuthorizationChecker(
+                        (req)=>{
+                            return new Promise(function(resolve,reject){
+                                resolve(!! req.session.user); 
+                            });
+                        }
+                    );
+                    return test(checker)
+                        .then((executed)=>{
+                            assert.ok(!executed,'username=假，next()方法不应该被执行');
+                        });
+                });
+
+                Promise.all(promises).then(()=>{done();}).catch(done);
+            });
         });
         describe('username=普通字符串 时:\t资源可以访问(执行next()方法)',()=>{
 
-            it("测试以默认参数进行初始化的情况",function(done){
+            it("以默认参数进行初始化",function(done){
                 const checker=new AuthorizationChecker();
                 req.session.username="hello";
                 test(checker)
@@ -68,7 +88,7 @@ describe('测试 AuthorizationChecker类',()=>{
                     .catch(done);
             });
 
-            it('测试自定义配置的请况', function(done){
+            it('自定义配置(同步式)', function(done){
                 const promises=[" ", 0x00af, "\x00ab","admin"].map(e => {
                     req.session.user = e;
                     const checker = new AuthorizationChecker(
@@ -82,6 +102,24 @@ describe('测试 AuthorizationChecker类',()=>{
                 Promise.all(promises).then(()=>{done();}).catch(done);
             });
             
+            it('自定义配置(异步式)', function(done){
+                const promises=[" ", 0x00af, "\x00ab","admin"].map(e => {
+                    req.session.user = e;
+                    const checker = new AuthorizationChecker(
+                        (req) => { 
+                            return new Promise(function(resolve,reject){
+                                resolve(!!req.session.user);
+                            })
+                        }
+                    );
+                    return test(checker)
+                        .then((executed)=>{
+                            assert.ok(executed,`用户名=${e}，理应执行next(),然而executed=${executed}`);
+                        });
+                });
+                Promise.all(promises).then(()=>{done();}).catch(done);
+            });
+           
         });
         
     });

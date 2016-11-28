@@ -126,30 +126,39 @@ describe('测试 AuthorizationChecker类',()=>{
     
 
     describe('.requireRole()',()=>{
-        const test = function (checker, ROLE) {
-            var executed = false;
-            checker.requireRole(ROLE)(req, res, () => {
-                executed = true;
+
+        const test=(checker,ROLE)=>{
+            let executed=false;
+            const middleware=checker.requireRole(ROLE);
+            return middleware(req,res,()=>{
+                executed=true;
+            }).then(()=>{
+                return executed;
             });
-            return executed;
         };
 
         describe("要求`ROLE_1`，已有`ROLE_X`",()=>{
 
-            it("测试使用默认参数进行初始化的情况",function(){
+            it("使用默认参数进行初始化",function(done){
                 let checker=new AuthorizationChecker();
                 req.session.roles=['ROLE_X'];
-                const executed=test(checker,"ROLE_1");
-                assert.ok(!executed, "没有要求的角色，但next()被执行了");
+                test(checker,"ROLE_1")
+                    .then(executed=>{
+                        assert.ok(!executed, "没有要求的角色，但next()被执行了");
+                    })
+                    .then(done).catch(done);
             });
-            it("测试使用自定义参数进行初始化的情况",function(){
+            it("使用自定义参数(同步式)进行初始化",function(done){
                 let checker=new AuthorizationChecker(
                     (req)=>{return !! req.session.username;},
                     (req)=>{return req.session.rolelist;}
                 );
                 req.session.rolelist=['ROLE_X'];
-                const executed=test(checker,"ROLE_1");
-                assert.ok(!executed, "没有要求的角色，但next()被执行了");
+                test(checker,"ROLE_1")
+                    .then(executed=>{
+                        assert.ok(!executed, "没有要求的角色，但next()被执行了");
+                    })
+                    .then(done).catch(done);
             });
             
         });
@@ -157,126 +166,160 @@ describe('测试 AuthorizationChecker类',()=>{
 
         describe("要求`ROLE_A`，已有`ROLE_A`",()=>{
 
-            it("测试使用默认参数进行初始化的情况",function(){
+            it("使用默认参数进行初始化",function(done){
                 let checker=new AuthorizationChecker();
                 req.session.roles=['ROLE_A'];
-                const executed=test(checker,"ROLE_A");
-                assert.ok(executed,"拥有所要求的角色`ROLE_A`，但next()未执行");
+                test(checker,"ROLE_A")
+                    .then(executed=>{
+                        assert.ok(executed,"拥有所要求的角色`ROLE_A`，但next()未执行");
+                    })
+                    .then(done).catch(done);
             });
 
-            it("测试使用自定义参数进行初始化的情况",function(){
+            it("使用自定义参数(同步式)进行初始化",function(done){
                 let checker=new AuthorizationChecker(
                     (req)=>{return !! req.session.username;},
                     (req)=>{return req.session.rolelist;}
                 );
                 req.session.rolelist=['ROLE_A'];
-                const executed=test(checker,"ROLE_A");
-                assert.ok(executed,"拥有所要求的角色`ROLE_A`，但next()未执行");
+                test(checker,"ROLE_A")
+                    .then(executed=>{
+                        assert.ok(executed,"拥有所要求的角色`ROLE_A`，但next()未执行");
+                    })
+                    .then(done).catch(done);
             });
             
         });
 
     });
-    
+
     describe('.requireAnyRole()',()=>{
 
         const test=(checker,ROLE_ARRAY)=>{
             let executed=false; 
-            checker.requireAnyRole(ROLE_ARRAY)(req,res,()=>{
-                executed=true;
+            const middleware = checker.requireAnyRole(ROLE_ARRAY);
+            return middleware(req, res, () => {
+                executed = true;
+            }).then(() => {
+                return executed;
             });
-            return executed;
         };
 
         describe('要求 [ROLE_X,ROLE_Y] 之中的任一角色，已有 `ROLE_1,ROLE_2,ROLE_X`',()=>{
 
-            it('测试使用默认参数进行初始化的情况', () => {
+            it('使用默认参数进行初始化', function(done){
                 req.session.roles = ['ROLE_1', 'ROLE_2', 'ROLE_X'];
                 const checker=new AuthorizationChecker();
-                const executed = test(checker,['ROLE_X','ROLE_Y']);
-                assert.ok(executed, "拥有指定角色，next()理应被执行");
+                test(checker,['ROLE_X','ROLE_Y'])
+                    .then(executed=>{
+                        assert.ok(executed, "拥有指定角色，next()理应被执行");
+                    })
+                    .then(done).catch(done);
             });
 
-            it('测试使用自定义参数进行初始化的情况', () => {
+            it('使用自定义参数(同步式)进行初始化', function(done){
                 req.session.rolelist = ['ROLE_1', 'ROLE_2', 'ROLE_X'];
                 const checker=new AuthorizationChecker(
                     (req)=>{return !!req.session.username;},
                     (req)=>{return req.session.rolelist;}
                 );
-                const executed = test(checker,['ROLE_X','ROLE_Y']);
-                assert.ok(executed, "拥有指定角色，next()理应被执行");
+                test(checker,['ROLE_X','ROLE_Y'])
+                    .then(executed=>{
+                        assert.ok(executed, "拥有指定角色，next()理应被执行");
+                    })
+                    .then(done).catch(done);
             });
         });
   
         describe('要求 [ROLE_X,ROLE_Y] 之中的任一角色，已有 `ROLE_1,ROLE_2,ROLE_3`', () => {
 
-            it('测试使用默认参数进行初始化的情况', () => {
+            it('使用默认参数进行初始化', function(done){
                 req.session.roles = ['ROLE_1', 'ROLE_2', 'ROLE_3'];
                 const checker = new AuthorizationChecker();
-                const executed = test(checker, ['ROLE_X', 'ROLE_Y']);
-                assert.ok(!executed, "无指定的任一角色，绝不应该执行next()");
+                test(checker, ['ROLE_X', 'ROLE_Y'])
+                    .then(executed=>{
+                        assert.ok(!executed, "无指定的任一角色，绝不应该执行next()");
+                    }).
+                    then(done).catch(done);
             });
 
-            it('测试使用自定义参数进行初始化的情况', () => {
+            it('使用自定义参数(同步式)进行初始化', function(done){
                 req.session.rolelist = ['ROLE_1', 'ROLE_2', 'ROLE_3'];
                 const checker = new AuthorizationChecker(
                     (req) => { return !!req.session.username; },
                     (req) => { return req.session.rolelist; }
                 );
-                const executed = test(checker, ['ROLE_X', 'ROLE_Y']);
-                assert.ok(!executed, "无指定的任一角色，绝不应该执行next()");
+                test(checker, ['ROLE_X', 'ROLE_Y'])
+                    .then(executed=>{
+                        assert.ok(!executed, "无指定的任一角色，绝不应该执行next()");
+                    })
+                    .then(done).catch(done);
             });
         });
  
     });
 
-    describe('.requireAllRole()',()=>{
+    describe('.requireAllRoles()',()=>{
 
         const test=(checker,ROLE_ARRAY)=>{
             let executed=false; 
-            checker.requireAllRoles(ROLE_ARRAY)(req,res,()=>{
-                executed=true;
+            const middleware = checker.requireAllRoles(ROLE_ARRAY);
+            return middleware(req, res, () => {
+                executed = true;
+            }).then(() => {
+                return executed;
             });
-            return executed;
         };
 
         describe('要求 [ROLE_X,ROLE_Y] 的全部角色，已有 `ROLE_1,ROLE_2,ROLE_3,ROLE_X`',()=>{
 
-            it('测试使用默认参数进行初始化的情况', () => {
+            it('使用默认参数进行初始化', function(done){
                 req.session.roles = ['ROLE_1', 'ROLE_2','ROLE_3', 'ROLE_X'];
                 const checker=new AuthorizationChecker();
-                const executed = test(checker,['ROLE_X','ROLE_Y']);
-                assert.ok(!executed, "未拥有指定的全部角色，next()不应被执行");
+                test(checker,['ROLE_X','ROLE_Y'])
+                    .then(executed=>{
+                        assert.ok(!executed, "未拥有指定的全部角色，next()不应被执行");
+                    })
+                    .then(done).catch(done);
             });
 
-            it('测试使用自定义参数进行初始化的情况', () => {
+            it('使用自定义参数(同步式)进行初始化', function(done){
                 req.session.rolelist = ['ROLE_1', 'ROLE_2','ROLE_3', 'ROLE_X'];
                 const checker=new AuthorizationChecker(
                     (req)=>{return !!req.session.username;},
                     (req)=>{return req.session.rolelist;}
                 );
-                const executed = test(checker,['ROLE_X','ROLE_Y']);
-                assert.ok(!executed, "未拥有指定的全部角色，next()不应被执行");
+                test(checker,['ROLE_X','ROLE_Y'])
+                    .then(executed=>{
+                        assert.ok(!executed, "未拥有指定的全部角色，next()不应被执行");
+                    })
+                    .then(done).catch(done);
             });
         });
   
         describe('要求 [ROLE_X,ROLE_Y] 的全部角色，已有`ROLE_1,ROLE_Y,ROLE_X``', () => {
 
-            it('测试使用默认参数进行初始化的情况', () => {
+            it('使用默认参数进行初始化', function(done){
                 req.session.roles = ['ROLE_1', 'ROLE_Y','ROLE_X',];
                 const checker = new AuthorizationChecker();
-                const executed = test(checker, ['ROLE_X', 'ROLE_Y']);
-                assert.ok(executed, "拥有要求的全部角色，理应应该执行next()");
+                test(checker, ['ROLE_X', 'ROLE_Y'])
+                    .then(executed=>{
+                        assert.ok(executed, "拥有要求的全部角色，理应应该执行next()");
+                    })
+                    .then(done).catch(done);
             });
 
-            it('测试使用自定义参数进行初始化的情况', () => {
+            it('使用自定义参数(同步式)进行初始化', function(done){
                 req.session.rolelist = ['ROLE_1', 'ROLE_Y','ROLE_X',];
                 const checker = new AuthorizationChecker(
                     (req) => { return !!req.session.username; },
                     (req) => { return req.session.rolelist; }
                 );
-                const executed = test(checker, ['ROLE_X', 'ROLE_Y']);
-                assert.ok(executed, "拥有要求的全部角色，理应应该执行next()");
+                test(checker, ['ROLE_X', 'ROLE_Y'])
+                    .then(executed=>{
+                        assert.ok(executed, "拥有要求的全部角色，理应应该执行next()");
+                    })
+                    .then(done).catch(done);
             });
         });
  
@@ -286,42 +329,52 @@ describe('测试 AuthorizationChecker类',()=>{
     describe('.requireTrue()',()=>{
 
         const test=(checker,fn)=>{
-            let executed=false;
-            checker.requireTrue(fn)(req,res,()=>{
-                executed=true;
+            const middleware = checker.requireTrue(fn);
+            let executed=false; 
+            return middleware(req, res, () => {
+                executed = true;
+            }).then(() => {
+                return executed;
             });
-            return executed;
         };
         
         describe("当fn返回值为真时:\t资源应可以被访问(必须执行next()方法)",function(){
             
-            it('测试默认情况',()=>{
+            it('默认情况',function(done){
                 const checker=new AuthorizationChecker();
                 req.sth=true;
-                let executed=test(checker);
-                assert.ok(executed,"必须为真");
+                test(checker)
+                    .then(executed=>{
+                        assert.ok(executed,"必须为真");
+                    })
+                    .then(done).catch(done);
             });
 
-            it('测试传递返回值为真的函数',()=>{
+            it('传递返回值为真的函数(同步式)',function(done){
                 const checker=new AuthorizationChecker();
                 req.sth=true;
-                let executed=test(checker,(req)=>{return req.sth;});
-                assert.ok(executed,"必须为真");
+                test(checker,(req)=>{return req.sth;})
+                    .then(executed=>{
+                        assert.ok(executed,"必须为真");
+                    })
+                    .then(done).catch(done);
             });
        
         });
 
         describe("当fn返回值为假时:\t资源应不可被访问(必须跳过next()方法)",function(){
             
-            it('测试传递返回值为假的函数',()=>{
+            it('传递返回值为假的函数(同步式)',function(done){
                 const checker=new AuthorizationChecker();
                 req.sth=false;
-                let executed=test(checker,(req)=>{return req.sth;});
-                assert.ok(!executed,"必不能执行");
+                test(checker,(req)=>{return req.sth;})
+                    .then(executed=>{
+                        assert.ok(!executed,"必不能执行");
+                    })
+                    .then(done).catch(done);
             });
        
         });
-
      
     });
 });

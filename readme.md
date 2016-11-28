@@ -31,8 +31,8 @@ const checker=new AuthorizationChecker();
 
 但是，`AuthorizationChecker`检查机制并不和 `session` 耦合在一起。 通过提供自定义`登陆检查器`、`角色访问器`，完全可以不需要 `session` 。
 
-1. `登陆检查器`：函数对象，接收请求`req`参数，返回当前用户是否登陆的`boolean`值
-2. `角色访问器`: 函数对象，接收请求`req`参数，返回当前用户所拥有的角色列表
+1. `登陆检查器`：函数对象，接收请求`req`参数，同步返回（或者以等价的异步的方式“返回”）当前用户是否登陆的`boolean`值，
+2. `角色访问器`: 函数对象，接收请求`req`参数，同步返回（或者以等价的异步的方式“返回”）当前用户所拥有的角色列表
 
 可以通过`AuthorizationChecker`实现自定义：
 ```JavaScript
@@ -43,6 +43,37 @@ const checker=new AuthorizationChecker(
 ```
 
 当前，还可以提供`msg`对象作为第三个参数（详见代码实现），但是大多情况下，不需要定制此参数。
+
+### 异步式
+
+除了上面演示的同步式的登陆检查器和角色访问器，还可以使用异步式进行定制:
+
+```JavaScript
+const checker=new AuthorizationChecker(
+    // 覆盖默认的登陆检查器
+    (req)=>{
+        return new Promise(function(resolve,reject){
+            resolve(!!req.session.username);
+        });
+    }, 
+    // 覆盖默认的角色访问器
+    (req,callback)=>{
+        setTimeout(function() {
+            callback(null,req.session.rolelist);
+        }, 100);
+    }
+);
+```
+
+除此之外，`requireTrue()`方法也支持使用异步式进行拦截：
+```JavaScript
+const checker=new AuthorizationChecker();
+
+checker.requireTrue(function(req){
+    return Promise.resolve(req.sth);
+});
+```
+
 
 ## 如何拦截请求
 

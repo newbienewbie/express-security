@@ -39,7 +39,7 @@ const authorInterceptor=new AuthorizationInterceptor();
 1. `登陆检查器`：函数对象，接收请求`req`参数，同步返回（或者以等价的异步的方式“返回”）当前用户是否登陆的`boolean`值，
 2. `角色访问器`: 函数对象，接收请求`req`参数，同步返回（或者以等价的异步的方式“返回”）当前用户所拥有的角色列表
 
-可以通过`AuthorizationInterceptor`实现自定义：
+可以通过`AuthenticationInterceptor`、`AuthorizationInterceptor`实现自定义：
 ```JavaScript
 const AuthenticationInterceptor=new AuthenticationInterceptor(
     (req)=>{return !!req.session.username;},  // 覆盖默认的登陆检查器
@@ -58,7 +58,7 @@ const AuthorizationInterceptor=new AuthorizationInterceptor(
 
 ```JavaScript
 
-// 支持各类异步方式：比如这里是以Promise的方式
+// 支持各类异步方式：比如可以以Promise的方式进行检查
 const authenticationInterceptor=new AuthenticationInterceptor(
     // 覆盖默认的登陆检查器
     (req)=>{
@@ -68,7 +68,7 @@ const authenticationInterceptor=new AuthenticationInterceptor(
     }
 );
 
-// 支持各类异步方式：比如这里是以callback的方式
+// 支持各类异步方式：还可以以callback的方式进行检查
 const authorizationInterceptor=new AuthorizationInterceptor(
     // 覆盖默认的角色访问器
     (req,callback)=>{

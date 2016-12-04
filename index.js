@@ -1,5 +1,6 @@
-const AuthenticationChecker=require('./lib/authentication-checker');
+const AuthenticationInterceptor=require('./lib/authentication-interceptor');
+const AuthorizationInterceptor=require('./lib/authorization-interceptor');
 const AuthorizationChecker=require('./lib/authorization-checker');
 
 
-module.exports={AuthenticationChecker,AuthorizationChecker};
+module.exports={AuthenticationInterceptor,AuthorizationInterceptor,AuthorizationChecker};

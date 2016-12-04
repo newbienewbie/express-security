@@ -58,5 +58,21 @@ describe('测试 msg-generator.js',function(){
             assert.equal(failMsg,`${msg}<meta http-equiv="refresh" content="${timeout};url='${url}'"/>`);
         });
     });
+
+
+    describe('#generateRoleFailMsgWithObj()',function(){
+        it('默认情况',function(){
+            const failMsg=msgGenerator.generateRoleFailMsgWithObj();
+            const obj={url:"/",msg:'',timeout:1};
+            let {url,msg,timeout}=obj;
+            assert.equal(failMsg,`${msg}<meta http-equiv="refresh" content="${timeout};url='${url}'"/>`);
+        });
+        it('定制参数情况',function(){
+            const obj={url:"/ss",msg:'helloworld',timeout:21};
+            const failMsg=msgGenerator.generateRoleFailMsgWithObj(obj);
+            let {url,msg,timeout}=obj;
+            assert.equal(failMsg,`${msg}<meta http-equiv="refresh" content="${timeout};url='${url}'"/>`);
+        });
+    });
     
 });

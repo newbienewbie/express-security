@@ -24,6 +24,21 @@ describe('测试 msg-generator.js',function(){
         });
     });
 
+    describe('#generateLoginFailMsgWithObj()',function(){
+        it('默认情况',function(){
+            const failMsg=msgGenerator.generateLoginFailMsgWithObj();
+            const obj={url:"/",msg:'',timeout:1};
+            let {url,msg,timeout}=obj;
+            assert.equal(failMsg,`${msg}<meta http-equiv="refresh" content="${timeout};url='${url}'"/>`);
+        });
+        it('定制参数情况',function(){
+            const obj={url:"/ss",msg:'helloworld',timeout:21};
+            const failMsg=msgGenerator.generateLoginFailMsgWithObj(obj);
+            let {url,msg,timeout}=obj;
+            assert.equal(failMsg,`${msg}<meta http-equiv="refresh" content="${timeout};url='${url}'"/>`);
+        });
+    });
+
     describe('#generateRoleFailMsg()',function(){
 
         let msg="您无此权限，即将为您重定向";

@@ -1,5 +1,5 @@
 const assert=require('assert');
-const AuthenticationChecker=require('../lib/authentication-checker');
+const AuthenticationInterceptor=require('../lib/authentication-interceptor');
 
 
 
@@ -25,7 +25,7 @@ describe('测试 AuthenticationChecker 类',()=>{
         describe("当username=假 时:\t资源不可访问(跳过next()方法)",function(){
 
             it('以默认参数进行初始化',(done)=>{
-                const checker=new AuthenticationChecker();
+                const checker=new AuthenticationInterceptor();
                 const promises=["",undefined,null].map(e=>{
                     req.session.username=e;
                     return test(checker)
@@ -42,7 +42,7 @@ describe('测试 AuthenticationChecker 类',()=>{
 
                 const promises=["",undefined,null].map(e=>{
                     req.session.user=e;
-                    const checker=new AuthenticationChecker(
+                    const checker=new AuthenticationInterceptor(
                         (req)=>{return !! req.session.user;}
                     );
                     return test(checker)
@@ -58,7 +58,7 @@ describe('测试 AuthenticationChecker 类',()=>{
 
                 const promises=["",undefined,null].map(e=>{
                     req.session.user=e;
-                    const checker=new AuthenticationChecker(
+                    const checker=new AuthenticationInterceptor(
                         (req)=>{
                             return new Promise(function(resolve,reject){
                                 resolve(!! req.session.user); 
@@ -77,7 +77,7 @@ describe('测试 AuthenticationChecker 类',()=>{
         describe('username=普通字符串 时:\t资源可以访问(执行next()方法)',()=>{
 
             it("以默认参数进行初始化",function(done){
-                const checker=new AuthenticationChecker();
+                const checker=new AuthenticationInterceptor();
                 req.session.username="hello";
                 test(checker)
                     .then(executed=>{
@@ -91,7 +91,7 @@ describe('测试 AuthenticationChecker 类',()=>{
             it('自定义配置(同步式)', function(done){
                 const promises=[" ", 0x00af, "\x00ab","admin"].map(e => {
                     req.session.user = e;
-                    const checker = new AuthenticationChecker(
+                    const checker = new AuthenticationInterceptor(
                         (req) => { return !!req.session.user; }
                     );
                     return test(checker)
@@ -105,7 +105,7 @@ describe('测试 AuthenticationChecker 类',()=>{
             it('自定义配置(异步式)', function(done){
                 const promises=[" ", 0x00af, "\x00ab","admin"].map(e => {
                     req.session.user = e;
-                    const checker = new AuthenticationChecker(
+                    const checker = new AuthenticationInterceptor(
                         (req) => { 
                             return new Promise(function(resolve,reject){
                                 resolve(!!req.session.user);

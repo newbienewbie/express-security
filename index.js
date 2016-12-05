@@ -3,4 +3,4 @@ const AuthorizationInterceptor=require('./lib/authorization-interceptor');
 const AuthorizationChecker=require('./lib/authorization-checker');
 
 
-module.exports={AuthenticationInterceptor,AuthorizationInterceptor,AuthorizationChecker};
+module.exports={AuthInterceptor,AuthenticationInterceptor,AuthorizationInterceptor,AuthorizationChecker};

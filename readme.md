@@ -2,11 +2,14 @@
 
 一套`Express`中间件，轻量，用于根据当前用户是否登陆、及其拥有的角色来拦截请求。
 
-目前使用`AuthenticationInterceptor`、 `AuthorizationInterceptor` 类作为对外统一接口。
-
 ## 使用说明
 
-1. 实例化一个拦截器（如果需要，可以将之作为服务暴露出去）
+目前使用`AuthenticationInterceptor`、 `AuthorizationInterceptor`、`AuthInterceptor` 类作为对外统一接口。三个类的职责为：
+* `AuthenticationInterceptor`： 负责认证检查
+* `AuthorizationInterceptor`：负责授权检查
+* `AuthInterceptor`：负责认证和授权检查，是以上两个类的包装
+
+1. 根据需要，实例化一个`AuthenticationInterceptor`、`AuthorizationInterceptor`、或者`AuthInterceptor`拦截器
 2. 使用拦截器拦截请求
 
 ### 默认情况
@@ -30,22 +33,30 @@ const authenInterceptor=new AuthenticationInterceptor();
 
 // initialize a authorization-interceptor
 const authorInterceptor=new AuthorizationInterceptor();
+
+// initialize a auth-interceptor
+const interceptor=new AuthInterceptor();
 ```
 
 ### 自定义配置
 
-但是，`AuthenticationInterceptor`、和`AuthorizationInterceptor`的检查机制并不和 `session` 耦合在一起。 通过提供自定义`登陆检查器`、`角色访问器`，完全可以不需要 `session` 。
+但是，`AuthInterceptor`、`AuthenticationInterceptor`、和`AuthorizationInterceptor`的检查机制并不和 `session` 耦合在一起。 通过提供自定义`登陆检查器`、`角色访问器`，完全可以不需要 `session` 。
 
 1. `登陆检查器`：函数对象，接收请求`req`参数，同步返回（或者以等价的异步的方式“返回”）当前用户是否登陆的`boolean`值，
 2. `角色访问器`: 函数对象，接收请求`req`参数，同步返回（或者以等价的异步的方式“返回”）当前用户所拥有的角色列表
 
 可以通过`AuthenticationInterceptor`、`AuthorizationInterceptor`实现自定义：
 ```JavaScript
-const AuthenticationInterceptor=new AuthenticationInterceptor(
+const authenticationInterceptor=new AuthenticationInterceptor(
     (req)=>{return !!req.session.username;},  // 覆盖默认的登陆检查器
 );
 
-const AuthorizationInterceptor=new AuthorizationInterceptor(
+const authorizationInterceptor=new AuthorizationInterceptor(
+    (req)=>{return req.session.roles;}        // 覆盖默认的角色访问器
+);
+
+const authInterceptor=new AuthInterceptor(
+    (req)=>{return !!req.session.username;},  // 覆盖默认的登陆检查器
     (req)=>{return req.session.roles;}        // 覆盖默认的角色访问器
 );
 ```
@@ -77,6 +88,15 @@ const authorizationInterceptor=new AuthorizationInterceptor(
         }, 100);
     }
 );
+
+const interceptor=new AuthInterceptor(
+    (req)=>{return !!req.session.username;},
+    (req)=>{
+        return new Promise(function(resolve,reject){
+            resolve(req.session.rolelist);
+        });
+    }
+);
 ```
 
 除此之外，`requireTrue()`方法也支持使用异步式进行拦截：
@@ -100,6 +120,7 @@ interceptor.requireTrue(function(req){
 4. `requireAllRoles()`
 5. `requireTrue()`
 
+`AuthInterceptor`的`requireXxx()`只是简单调用`AuthenticationInterceptor`和`AuthorizationInterceptor`的相应`requireXxx()`方法。
 每个这种方法都是一个高阶函数，调用后会返回一个中间件函数，用于拦截请求：
 
 ```JavaScript
@@ -121,9 +142,11 @@ router.use("/admin",interceptor.requireRole("ROLE_ROOT","/"));
 
 ## 使用示例
 
+可以根据需要，分别实例化一个`AuthenticationInterceptor`和`AuthorizationInterceptor`。
+
 ```JavaScript
 const express=require('express');
-const {AuthenticationInterceptor,AuthorizationInterceptor}=require('express-security');
+const {AuthInterceptor,AuthenticationInterceptor,AuthorizationInterceptor}=require('express-security');
 
 const router=express.Router();
 
@@ -152,4 +175,12 @@ router.use("/holy",interceptor.requireAllRoles(["ROLE_0","ROLE_1","ROLE_2"]));
 
 // 要求返回正确值的可调用对象
 router.use("/shit",interceptor.requireTrue((req)=>{return !! req.query.sth;},"/"));
+```
+如果同时需要根据用户登录状态和角色信息对请求进行拦截,也可以直接实例化一个`AuthInterceptor`作为统一的外部接口。
+
+```JavaScript
+const AuthInterceptor=new AuthInterceptor(
+    (req)=>{return !!req.session.username;},
+    (req)=>{return req.session.roles;}
+);
 ```

@@ -8,7 +8,7 @@ describe('测试 AuthInterceptor类',()=>{
     // 模拟 req、res、next
     // 第一组：
     let req={ session:{ username:'', roles:[]} };
-    let res={ send:()=>{ } };
+    let res={ send:()=>{ },status:function(){ return this;} };
     let next=()=>{};
 
     describe('.requireLogin()',()=>{

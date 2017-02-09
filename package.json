@@ -1,6 +1,6 @@
 {
   "name": "express-security",
-  "version": "0.7.6",
+  "version": "0.7.8",
   "description": "lightweight authentication/authorization express middleware",
   "main": "index.js",
   "scripts": {

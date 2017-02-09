@@ -7,7 +7,7 @@
 目前使用`AuthenticationInterceptor`、 `AuthorizationInterceptor`、`AuthInterceptor` 类作为对外统一接口。三个类的职责为：
 * `AuthenticationInterceptor`： 负责认证检查
 * `AuthorizationInterceptor`：负责授权检查
-* `AuthInterceptor`：负责认证和授权检查，是以上两个类的包装
+* `AuthInterceptor`：负责认证和授权检查，只是以上两个类的包装
 
 1. 根据需要，实例化一个`AuthenticationInterceptor`、`AuthorizationInterceptor`、或者`AuthInterceptor`拦截器
 2. 使用拦截器拦截请求
@@ -34,27 +34,31 @@ const authenInterceptor=new AuthenticationInterceptor();
 // initialize a authorization-interceptor
 const authorInterceptor=new AuthorizationInterceptor();
 
-// initialize a auth-interceptor
+// or just initialize a auth-interceptor
 const interceptor=new AuthInterceptor();
 ```
 
 ### 自定义配置
 
-但是，`AuthInterceptor`、`AuthenticationInterceptor`、和`AuthorizationInterceptor`的检查机制并不和 `session` 耦合在一起。 通过提供自定义`登陆检查器`、`角色访问器`，完全可以不需要 `session` 。
+尽管默认的配置是基于`session`的，但是，`AuthInterceptor`、`AuthenticationInterceptor`、和`AuthorizationInterceptor`的检查机制并不和 `session` 耦合在一起。 通过提供自定义`登陆检查器`、`角色访问器`，完全可以丢掉 `session` 。
 
 1. `登陆检查器`：函数对象，接收请求`req`参数，同步返回（或者以等价的异步的方式“返回”）当前用户是否登陆的`boolean`值，
-2. `角色访问器`: 函数对象，接收请求`req`参数，同步返回（或者以等价的异步的方式“返回”）当前用户所拥有的角色列表
+2. `角色访问器`: 函数对象，接收请求`req`参数，同步返回（或者以等价的异步的方式“返回”）当前用户所拥有的角色列表。放心，拦截器只会对“返回”的角色列表读操作。
 
 可以通过`AuthenticationInterceptor`、`AuthorizationInterceptor`实现自定义：
 ```JavaScript
+
+// 认证拦截器
 const authenticationInterceptor=new AuthenticationInterceptor(
     (req)=>{return !!req.session.username;},  // 覆盖默认的登陆检查器
 );
 
+// 授权拦截器
 const authorizationInterceptor=new AuthorizationInterceptor(
     (req)=>{return req.session.roles;}        // 覆盖默认的角色访问器
 );
 
+// 如果你认证/授权都需要的话：
 const authInterceptor=new AuthInterceptor(
     (req)=>{return !!req.session.username;},  // 覆盖默认的登陆检查器
     (req)=>{return req.session.roles;}        // 覆盖默认的角色访问器
@@ -184,3 +188,7 @@ const AuthInterceptor=new AuthInterceptor(
     (req)=>{return req.session.roles;}
 );
 ```
+
+## 案例
+
+参见我的这篇笔记：[ASP.NET 与 Node.js 的协作实践](http://www.itminus.com/2016/11/29/Misc/ASP-NET-%E4%B8%8E-Node-js-%E7%9A%84%E5%8D%8F%E4%BD%9C%E5%AE%9E%E8%B7%B5/) 
